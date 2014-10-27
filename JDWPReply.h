@@ -33,12 +33,12 @@ class JDWPReply
 	public:
 		static JDWPReply fromPacket(QByteArray& packet);
 
-		int id() const;
-		short error() const;
+		qint32 id() const;
+		qint16 error() const;
 		QByteArray data() const;
 
 	protected:
-		JDWPReply(int length, int id, char flags, short errorCode, QByteArray data);
+		JDWPReply(qint32 length, qint32 id, qint8 flags, qint16 errorCode, QByteArray data);
 
 	private:
 		qint32 length_{};
@@ -47,11 +47,11 @@ class JDWPReply
 		qint16 errorCode_{};
 		QByteArray data_;
 
-		static const int headerSize_{11};// Header should always be 11 (2 ints and 1 char and 1 short)
+		static const qint32 headerSize_{11};// Header should always be 11 (2 ints and 1 char and 1 short)
 
 };
 
-inline int JDWPReply::id() const { return id_; }
-inline short JDWPReply::error() const { return errorCode_; }
+inline qint32 JDWPReply::id() const { return id_; }
+inline qint16 JDWPReply::error() const { return errorCode_; }
 inline QByteArray JDWPReply::data() const { return data_; }
 

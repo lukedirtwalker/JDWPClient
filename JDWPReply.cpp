@@ -40,19 +40,10 @@ JDWPReply JDWPReply::fromPacket(QByteArray& packet)
 	qint16 error;
 	QDataStream packetStream(packet);
 	packetStream >> length >> id >> flags >> error;
-	int dataSize = length - headerSize_;
-	qDebug() << "Received data size" <<dataSize;
+	qint32 dataSize = length - headerSize_;
 	if (dataSize > 0)
 	{
-		qDebug() << "DEV POS: " << packetStream.device()->pos();
 		auto byteArray = packetStream.device()->readAll();
-
-		QDataStream replyStream(byteArray);
-		char* description;
-		int major, minor;
-		replyStream >> description >> major >> minor;
-		qDebug() << "Version" << major << minor;
-
 		return JDWPReply(length, id, flags, error, byteArray);
 	}
 	else
@@ -61,8 +52,8 @@ JDWPReply JDWPReply::fromPacket(QByteArray& packet)
 	}
 }
 
-JDWPReply::JDWPReply(int length, int id, char flags, short errorCode, QByteArray data)
+JDWPReply::JDWPReply(qint32 length, qint32 id, qint8 flags, qint16 errorCode, QByteArray data)
 	: length_{length}, id_{id}, flags_{flags}, errorCode_{errorCode}, data_{data}
 {
-	qDebug() << "PACKET REPLY" << length_ << id_ << static_cast<int>(flags_) << static_cast<int>(errorCode_) << data_;
+//	qDebug() << "PACKET REPLY" << length_ << id_ << static_cast<int>(flags_) << static_cast<int>(errorCode_) << data_;
 }

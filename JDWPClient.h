@@ -26,9 +26,12 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtNetwork/QTcpSocket>
+#include <QtCore/QHash>
 
 class JDWPClient : public QObject
 {
@@ -45,7 +48,10 @@ class JDWPClient : public QObject
 
 		void onReady();
 
+		void handleVersion(const QByteArray& data);
+
 	private:
+		QHash<int, std::function<void(JDWPClient&, const QByteArray&)>> handlingMap_;
 		QString remoteHost_{"localhost"};
 		int remotePort_{4000};
 		QTcpSocket* tcpSocket_{};

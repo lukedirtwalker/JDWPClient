@@ -63,8 +63,15 @@ void JDWPClient::read()
 	}
 	else
 	{
-		JDWPReply::fromPacket(data);
-//		qDebug() << reply.id() << reply.data();
+		auto reply = JDWPReply::fromPacket(data);
+		qDebug() << "Reply error" << reply.error();
+		if (reply.error() <= 512) // FIXME remove hardcoded val
+		{
+			if (auto fun = handlingMap_[reply.id()])
+				fun(*this, reply.data());
+			else
+				;// TODO that is most probably an event
+		}
 	}
 }
 
@@ -76,5 +83,27 @@ void JDWPClient::sendHanshake()
 void JDWPClient::onReady()
 {
 	auto command = JDWPCommand(JDWPProtocol::CommandSet::VirtualMachine, 1, nullptr, 0);
+	handlingMap_[0] = &JDWPClient::handleVersion;
 	tcpSocket_->write(command.packet());
+}
+
+QDataStream& operator>>(QDataStream& stream, QString& read)
+{
+	// String in JDWP are encoded like this: | length | String (without \0) |
+	qint32 len;
+	stream >> len;
+	char data[len + 1];
+	stream.readRawData(data, len);
+	data[len] = '\0';
+	read = QString(data);
+	return stream;
+}
+
+void JDWPClient::handleVersion(const QByteArray& data)
+{
+	qint32 jdwpMajor, jdwpMinor;
+	QString description, vmVersion, vmName;
+	QDataStream dataStream(data);
+	dataStream >> description >> jdwpMajor >> jdwpMinor >> vmVersion >> vmName;
+	qDebug() << "Version info: \n" << description << jdwpMajor << jdwpMinor << "\n" << vmVersion << vmName;
 }
