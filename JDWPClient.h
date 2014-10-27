@@ -33,6 +33,21 @@
 #include <QtNetwork/QTcpSocket>
 #include <QtCore/QHash>
 
+#include "JDWPProtocol.h"
+
+class JDWPCommand;
+
+struct JDWPClass
+{
+		JDWPClass() {}
+		JDWPClass(JDWPProtocol::TypeTagKind kind, qint64 typeId, QString signature, JDWPProtocol::ClassStatus status)
+			: kind_{kind}, typeId_{typeId}, signature_{signature}, status_{status} {}
+		JDWPProtocol::TypeTagKind kind_{};
+		qint64 typeId_{};
+		QString signature_;
+		JDWPProtocol::ClassStatus status_{};
+};
+
 class JDWPClient : public QObject
 {
 	Q_OBJECT
@@ -48,10 +63,16 @@ class JDWPClient : public QObject
 
 		void onReady();
 
+		void sendCommand(const JDWPCommand& command, std::function<void(JDWPClient&, const QByteArray&)> replyHandler);
+
 		void handleVersion(const QByteArray& data);
+
+		void requestClassInfo();
+		void handleAllClasses(const QByteArray& data);
 
 	private:
 		QHash<int, std::function<void(JDWPClient&, const QByteArray&)>> handlingMap_;
+		QHash<QString, JDWPClass> classMap_;
 		QString remoteHost_{"localhost"};
 		int remotePort_{4000};
 		QTcpSocket* tcpSocket_{};

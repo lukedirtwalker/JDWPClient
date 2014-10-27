@@ -31,7 +31,7 @@
 class JDWPCommand
 {
 	public:
-		JDWPCommand(const JDWPProtocol::CommandSet& commandSet, char command, const char* data, int dataSize);
+		JDWPCommand(const JDWPProtocol::CommandSet& commandSet, qint8 command, const char* data, int dataSize);
 
 		int id() const;
 		QByteArray packet() const;

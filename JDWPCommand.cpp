@@ -33,7 +33,7 @@
 
 int JDWPCommand::packetCounter_ = 0;
 
-JDWPCommand::JDWPCommand(const JDWPProtocol::CommandSet& commandSet, char command, const char* data, int dataSize)
+JDWPCommand::JDWPCommand(const JDWPProtocol::CommandSet& commandSet, qint8 command, const char* data, int dataSize)
 	: commandSet_{static_cast<char>(commandSet)}, command_{command}, data_{data}
 {
 	id_ = packetCounter_++;

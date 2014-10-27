@@ -28,7 +28,6 @@
 
 #include <QtCore/QDebug>
 
-#include "JDWPProtocol.h"
 #include "JDWPReply.h"
 #include "JDWPCommand.h"
 
@@ -70,7 +69,7 @@ void JDWPClient::read()
 			if (auto fun = handlingMap_[reply.id()])
 				fun(*this, reply.data());
 			else
-				;// TODO that is most probably an event
+				qDebug() << "UNHANDLED:" << reply.data();// TODO that is most probably an event
 		}
 	}
 }
@@ -83,7 +82,14 @@ void JDWPClient::sendHanshake()
 void JDWPClient::onReady()
 {
 	auto command = JDWPCommand(JDWPProtocol::CommandSet::VirtualMachine, 1, nullptr, 0);
-	handlingMap_[0] = &JDWPClient::handleVersion;
+	sendCommand(command, &JDWPClient::handleVersion);
+	requestClassInfo();
+}
+
+void JDWPClient::sendCommand(const JDWPCommand& command,
+									  std::function<void (JDWPClient&, const QByteArray&)> replyHandler)
+{
+	handlingMap_[command.id()] = replyHandler;
 	tcpSocket_->write(command.packet());
 }
 
@@ -99,6 +105,20 @@ QDataStream& operator>>(QDataStream& stream, QString& read)
 	return stream;
 }
 
+QDataStream& operator>>(QDataStream& stream, JDWPClass& clazz)
+{
+	qint8 kind;
+	qint64 typeId;
+	QString signature;
+	qint32 status;
+	stream >> kind >> typeId >> signature >> status;
+	if (signature.contains("Array"))
+		qDebug() << "#SIG" << signature;
+	clazz = JDWPClass(static_cast<JDWPProtocol::TypeTagKind>(kind), typeId, signature,
+							static_cast<JDWPProtocol::ClassStatus>(status));
+	return stream;
+}
+
 void JDWPClient::handleVersion(const QByteArray& data)
 {
 	qint32 jdwpMajor, jdwpMinor;
@@ -106,4 +126,19 @@ void JDWPClient::handleVersion(const QByteArray& data)
 	QDataStream dataStream(data);
 	dataStream >> description >> jdwpMajor >> jdwpMinor >> vmVersion >> vmName;
 	qDebug() << "Version info: \n" << description << jdwpMajor << jdwpMinor << "\n" << vmVersion << vmName;
+}
+
+void JDWPClient::requestClassInfo()
+{
+	auto command = JDWPCommand(JDWPProtocol::CommandSet::VirtualMachine,
+										static_cast<qint8>(JDWPProtocol::VirtualMachineCommands::AllClasses), nullptr, 0);
+	sendCommand(command, &JDWPClient::handleAllClasses);
+}
+
+void JDWPClient::handleAllClasses(const QByteArray& data)
+{
+	QList<JDWPClass> classes;
+	QDataStream dataStream(data);
+	dataStream >> classes;
+	qDebug() << "read the classes";
 }
