@@ -25,15 +25,38 @@
 ***********************************************************************************************************************/
 
 #include <QCoreApplication>
+#include <QCommandLineParser>
 
 #include "JDWPClient.h"
 
 int main(int argc, char *argv[])
 {
-	QCoreApplication a(argc, argv);
+   QCoreApplication app(argc, argv);
+   QCoreApplication::setApplicationName("jdwpclient");
+   QCoreApplication::setApplicationVersion("1.0");
 
-	JDWPClient c;
-	c.sendHanshake();
+   QCommandLineParser parser;
+   parser.setApplicationDescription("client for Java Device Wire Protocol");
+   parser.addHelpOption();
+   parser.addVersionOption();
 
-	return a.exec();
+   QCommandLineOption hostOption("host",
+   QCoreApplication::translate("main", "host to connect."),
+   QCoreApplication::translate("main", "host"));
+   hostOption.setDefaultValue("localhost");
+   parser.addOption(hostOption);
+
+   QCommandLineOption portOption(QStringList() << "p" << "port",
+   QCoreApplication::translate("main", "port to connect."),
+   QCoreApplication::translate("main", "port"));
+   portOption.setDefaultValue("8000");
+      
+   parser.addOption(portOption);
+
+   parser.process(app);
+
+	JDWPClient client(parser.value(hostOption), parser.value(portOption).toInt());
+	client.sendHanshake();
+
+	return app.exec();
 }

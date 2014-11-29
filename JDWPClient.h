@@ -53,7 +53,7 @@ class JDWPClient : public QObject
 	Q_OBJECT
 
 	public:
-		JDWPClient();
+		JDWPClient(QString remoteHost="localhost", int remotePort=8000);
 		~JDWPClient();
 
 		static void handleSocketError(QAbstractSocket::SocketError socketError);
@@ -67,14 +67,13 @@ class JDWPClient : public QObject
 
 		void handleVersion(const QByteArray& data);
 
-		void requestClassInfo();
 		void handleAllClasses(const QByteArray& data);
 
 	private:
 		QHash<int, std::function<void(JDWPClient&, const QByteArray&)>> handlingMap_;
 		QHash<QString, JDWPClass> classMap_;
-		QString remoteHost_{"localhost"};
-		int remotePort_{4000};
+		QString remoteHost_;
+		int remotePort_;
 		QTcpSocket* tcpSocket_{};
 		bool connected_{};
 		bool ready_{};

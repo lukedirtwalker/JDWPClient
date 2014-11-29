@@ -55,5 +55,5 @@ JDWPReply JDWPReply::fromPacket(QByteArray& packet)
 JDWPReply::JDWPReply(qint32 length, qint32 id, qint8 flags, qint16 errorCode, QByteArray data)
 	: length_{length}, id_{id}, flags_{flags}, errorCode_{errorCode}, data_{data}
 {
-//	qDebug() << "PACKET REPLY" << length_ << id_ << static_cast<int>(flags_) << static_cast<int>(errorCode_) << data_;
+	qDebug() << "PACKET REPLY" << length_ << id_ << static_cast<int>(flags_) << static_cast<int>(errorCode_) << data_;
 }

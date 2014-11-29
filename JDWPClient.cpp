@@ -31,7 +31,9 @@
 #include "JDWPReply.h"
 #include "JDWPCommand.h"
 
-JDWPClient::JDWPClient()
+JDWPClient::JDWPClient(QString remoteHost, int remotePort):
+			remoteHost_(remoteHost),
+			remotePort_(remotePort)
 {
 	tcpSocket_ = new QTcpSocket();
 	QObject::connect(tcpSocket_, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),
@@ -81,9 +83,12 @@ void JDWPClient::sendHanshake()
 
 void JDWPClient::onReady()
 {
-	auto command = JDWPCommand(JDWPProtocol::CommandSet::VirtualMachine, 1, nullptr, 0);
+	auto command = JDWPCommand(JDWPProtocol::CommandSet::VirtualMachine,
+			static_cast<qint8>(JDWPProtocol::VirtualMachineCommands::Version));
 	sendCommand(command, &JDWPClient::handleVersion);
-	requestClassInfo();
+	auto command1 = JDWPCommand(JDWPProtocol::CommandSet::VirtualMachine,
+			static_cast<qint8>(JDWPProtocol::VirtualMachineCommands::AllClasses));
+	sendCommand(command1, &JDWPClient::handleAllClasses);
 }
 
 void JDWPClient::sendCommand(const JDWPCommand& command,
@@ -105,6 +110,15 @@ QDataStream& operator>>(QDataStream& stream, QString& read)
 	return stream;
 }
 
+void JDWPClient::handleVersion(const QByteArray& data)
+{
+	qint32 jdwpMajor, jdwpMinor;
+	QString description, vmVersion, vmName;
+	QDataStream dataStream(data);
+	dataStream >> description >> jdwpMajor >> jdwpMinor >> vmVersion >> vmName;
+	qDebug() << "Version info: \n" << description << jdwpMajor << jdwpMinor << "\n" << vmVersion << vmName;
+}
+
 QDataStream& operator>>(QDataStream& stream, JDWPClass& clazz)
 {
 	qint8 kind;
@@ -115,30 +129,15 @@ QDataStream& operator>>(QDataStream& stream, JDWPClass& clazz)
 	if (signature.contains("Array"))
 		qDebug() << "#SIG" << signature;
 	clazz = JDWPClass(static_cast<JDWPProtocol::TypeTagKind>(kind), typeId, signature,
-							static_cast<JDWPProtocol::ClassStatus>(status));
+			static_cast<JDWPProtocol::ClassStatus>(status));
 	return stream;
-}
-
-void JDWPClient::handleVersion(const QByteArray& data)
-{
-	qint32 jdwpMajor, jdwpMinor;
-	QString description, vmVersion, vmName;
-	QDataStream dataStream(data);
-	dataStream >> description >> jdwpMajor >> jdwpMinor >> vmVersion >> vmName;
-	qDebug() << "Version info: \n" << description << jdwpMajor << jdwpMinor << "\n" << vmVersion << vmName;
-}
-
-void JDWPClient::requestClassInfo()
-{
-	auto command = JDWPCommand(JDWPProtocol::CommandSet::VirtualMachine,
-										static_cast<qint8>(JDWPProtocol::VirtualMachineCommands::AllClasses), nullptr, 0);
-	sendCommand(command, &JDWPClient::handleAllClasses);
 }
 
 void JDWPClient::handleAllClasses(const QByteArray& data)
 {
 	QList<JDWPClass> classes;
 	QDataStream dataStream(data);
+	//Overloaded operator
 	dataStream >> classes;
 	qDebug() << "read the classes";
 }
