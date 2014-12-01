@@ -28,7 +28,4 @@ class JDWPMessage
 {
 	public:
 		JDWPMessage();
-
-	private:
-		int
 };
